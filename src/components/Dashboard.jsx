@@ -26,17 +26,13 @@ export const Dashboard = () => {
   };
 const handledeleteFlipbook = async (fileId) => {
   try {
-    const res = await fetch(`http://flipbook.mitchell-railgear.com/api/multer/delete`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ id: fileId }), // ✅ send JSON
+    const res = await fetch(`http://flipbook.mitchell-railgear.com/api/multer/delete/${fileId}`, {
+      method: "DELETE",
     });
 
-    if (res.ok) {
+    if (res) {
       setData(data.filter(file => file._id !== fileId));
-      alert(res.data.message);
+      alert("File deleted successfully");
     } else {
       const errorText = await res.text();
       console.error('Failed to delete file:', errorText);
