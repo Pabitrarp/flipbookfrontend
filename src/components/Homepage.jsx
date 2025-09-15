@@ -2,12 +2,13 @@ import React, { useState, useRef } from 'react';
 import JoditEditor from 'jodit-react';
 import html2pdf from 'html2pdf.js';
 import { PDFDocument } from 'pdf-lib';
-
+import {Layout} from './Layout';
+import { useNavigate } from 'react-router-dom';
 
 const Homepage = () => {
   const [content, setContent] = useState('');
   const [pdfFiles, setPdfFiles] = useState([]);
-
+const navigate = useNavigate();
   const editor = useRef(null);
 
   const config = {
@@ -68,10 +69,10 @@ const Homepage = () => {
  const finalPdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
 
   const formData = new FormData();
-  formData.append('file', finalPdfBlob, 'merged.pdf');
+  formData.append('file', finalPdfBlob, 'flipbook.pdf');
 
   try {
-    const response = await fetch('http://localhost:8080/api/multer/upload', {
+    const response = await fetch('http://flipbook.mitchell-railgear.com/api/multer/upload', {
       method: 'POST',
       body: formData,
     });
@@ -81,22 +82,30 @@ const Homepage = () => {
     }
 
     const result = await response.json();
-    console.log('Upload success:', result); // you may get `result.url` or `result._id` here
+    console.log('Upload success:', result); 
+    alert('Flipbook created successfully!');
+navigate("/");
   } catch (err) {
     console.error('Error uploading PDF:', err);
   }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 gap-2">
+    <Layout>
+      <div className="flex min-h-screen bg-blue-50 gap-2">
     
-      <div className="sidebar w-[30%] bg-white p-4 shadow-md rounded-lg flex flex-col gap-4">
+      <div className="sidebar w-[30%] bg-white p-4 shadow-md rounded-lg flex flex-col gap-4 bg-blue-50">
         <JoditEditor
           ref={editor}
           value={content}
-          config={config}
+           config={{
+    ...config,
+    height: 600, 
+    minHeight:350 
+  }}
           tabIndex={1}
           onBlur={(newContent) => setContent(newContent)}
+          style={{ minHeight: '40vh' }}
         />
 
         <button
@@ -128,7 +137,7 @@ const Homepage = () => {
 
         <button
           onClick={mergeAndShowFlipbook}
-          className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
+          className="bg-blue-600 text-white px-4 py-2 rounded mt-4 coser-pointer"
         >
           Create Flipbook
         </button>
@@ -144,8 +153,8 @@ const Homepage = () => {
         </div>
       </div>
 
- 
     </div>
+    </Layout>
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { Layout } from "./Layout";
 import HTMLFlipBook from "react-pageflip";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.mjs?url";
@@ -18,7 +19,7 @@ export const Fileviewer = () => {
   useEffect(() => {
     const loadPDF = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/multer/file/${id}`);
+        const res = await fetch(`http://flipbook.mitchell-railgear.com/api/multer/file/${id}`);
         const blob = await res.blob();
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(blob))
           .promise;
@@ -54,12 +55,12 @@ export const Fileviewer = () => {
     flipBook.current.pageFlip().flipPrev();
   };
 
-  const iframeCode = `<iframe src="http://localhost:3000/flipbook/${id}" width="600" height="800" style="border:none;"></iframe>`;
+  const iframeCode = `<iframe src="http://flipbook.mitchell-railgear.com/flipbook/${id}" width="600" height="800" style="border:none;"></iframe>`;
 
   if (loading) return <div className="text-center mt-20">📄 Loading PDF...</div>;
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 p-4">
+    <Layout>    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 p-4">
       {/* Flipbook Container */}
       <div className="relative">
         {/* Previous Button */}
@@ -136,6 +137,7 @@ export const Fileviewer = () => {
         </div>
       )}
     </div>
+    </Layout>
   );
 };
 

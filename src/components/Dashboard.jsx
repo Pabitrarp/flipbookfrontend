@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
+import {Layout} from './Layout.jsx';
 export const Dashboard = () => {
   const [data, setData] = useState([]);
   const navigate = useNavigate();
@@ -8,7 +8,7 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/multer/file', {
+        const res = await fetch('http://flipbook.mitchell-railgear.com/api/multer/file', {
           method: 'GET',
         });
         const result = await res.json();
@@ -24,8 +24,28 @@ export const Dashboard = () => {
   const handleOpenFlipbook = (fileId) => {
     navigate(`/flipbook/${fileId}`);
   };
+ const handledeleteFlipbook = async (fileId) => {
+  try {
+    const res = await fetch(`http://flipbook.mitchell-railgear.com/api/multer/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id: fileId }),
+    });
+
+    if (res.ok) {
+      setData(data.filter(file => file._id !== fileId));
+    } else {
+      console.error('Failed to delete file');
+    }
+  } catch (error) {
+    console.error('Error deleting file:', error);
+  }
+};
 
   return (
+    <Layout>
     <div className="min-h-screen bg-blue-50 p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">📚 Flipbook Dashboard</h1>
@@ -53,12 +73,20 @@ export const Dashboard = () => {
 })}
 
               </p>
-              <button
+              <div className='flex gap-4'>
+                <button
                 onClick={() => handleOpenFlipbook(file._id)}
                 className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
               >
                 📖 Open Flipbook
               </button>
+              <button
+                onClick={() => handledeleteFlipbook(file._id)}
+                className="mt-4 w-full bg-red-500 text-white py-2 rounded  transition"
+              >
+                Delete
+              </button>
+              </div>
             </div>
           ))
         ) : (
@@ -66,5 +94,6 @@ export const Dashboard = () => {
         )}
       </div>
     </div>
+    </Layout>
   );
 };
