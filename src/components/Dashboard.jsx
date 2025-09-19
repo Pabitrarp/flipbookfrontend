@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {Layout} from './Layout.jsx';
+import { Sidebar } from './Sidebar.jsx';
+import axios from 'axios';
 export const Dashboard = () => {
   const [data, setData] = useState([]);
   const navigate = useNavigate();
@@ -26,11 +28,10 @@ export const Dashboard = () => {
   };
 const handledeleteFlipbook = async (fileId) => {
   try {
-    const res = await fetch(`http://flipbook.mitchell-railgear.com/api/multer/delete/${fileId}`, {
-      method: "DELETE",
-    });
+    const res = await axios.delete(`http://flipbook.mitchell-railgear.com/api/multer/delete/${fileId}`);
 
     if (res) {
+      console.log(res);
       setData(data.filter(file => file._id !== fileId));
       alert("File deleted successfully");
     } else {
@@ -45,7 +46,9 @@ const handledeleteFlipbook = async (fileId) => {
 
   return (
     <Layout>
-    <div className="min-h-screen bg-blue-50 p-6">
+    <div className="min-h-screen bg-blue-50  flex">
+      <Sidebar></Sidebar>
+      <div className='flex-1 p-6 '>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">📚 Flipbook Dashboard</h1>
         <Link
@@ -55,8 +58,8 @@ const handledeleteFlipbook = async (fileId) => {
           + Create a Flipbook
         </Link>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className='w-full flex justify-center items-center  p-4'>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 w-[88%] ">
         {data.length > 0 ? (
           data.map((file) => (
             <div
@@ -91,6 +94,8 @@ const handledeleteFlipbook = async (fileId) => {
         ) : (
           <p className="text-gray-600 col-span-full">No PDFs uploaded yet.</p>
         )}
+      </div>
+      </div>
       </div>
     </div>
     </Layout>

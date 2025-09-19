@@ -82,8 +82,8 @@ export const Fileviewer = () => {
           ref={flipBook}
           onFlip={(e) => setCurrentPage(e.data)}
         >
-          <div className="page bg-white flex items-center justify-center">
-            <h2 className="text-center text-2xl font-bold">Start of Flipbook</h2>
+          <div className="bg-white flex items-center justify-center bg-cover bg-center bg-[url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSh6zKQpZZlZy4RnkXeMXslIklt9aZQdvLavA&s')]">
+            
           </div>
           {pdfPages.map((src, idx) => (
             <div key={idx} className="page bg-white">
@@ -94,7 +94,7 @@ export const Fileviewer = () => {
               />
             </div>
           ))}
-          <div className="page bg-white flex items-center justify-center">
+          <div className="page bg-white flex items-center justify-center bg-cover bg-center bg-[url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSh6zKQpZZlZy4RnkXeMXslIklt9aZQdvLavA&s')]">
             <h2 className="text-center text-2xl font-bold">End of Flipbook</h2>
           </div>
         </HTMLFlipBook>

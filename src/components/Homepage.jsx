@@ -94,7 +94,7 @@ navigate("/");
     <Layout>
       <div className="flex min-h-screen bg-blue-50 gap-2">
     
-      <div className="sidebar w-[30%] bg-white p-4 shadow-md rounded-lg flex flex-col gap-4 bg-blue-50">
+      <div className="sidebar w-[30%]  p-4 shadow-md rounded-lg flex flex-col gap-4 bg-blue-50">
         <JoditEditor
           ref={editor}
           value={content}
