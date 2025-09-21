@@ -28,12 +28,11 @@ export const Dashboard = () => {
   };
 const handledeleteFlipbook = async (fileId) => {
   try {
-    const res = await axios.delete(`http://flipbook.mitchell-railgear.com/api/multer/delete/${fileId}`);
-
+    const res = await axios.get(`http://flipbook.mitchell-railgear.com/api/multer/${fileId}`);
     if (res) {
       console.log(res);
-      setData(data.filter(file => file._id !== fileId));
       alert("File deleted successfully");
+      setData(data.filter(file => file._id !== fileId));
     } else {
       const errorText = await res.text();
       console.error('Failed to delete file:', errorText);
