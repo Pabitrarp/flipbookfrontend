@@ -82,6 +82,13 @@ export const Sidebar = ({ user = "Administrator" }) => {
             <FiPlusSquare className="w-5 h-5 text-blue-600" />
             Account Setting
           </a>
+          <a
+            href="/templets"
+            className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100 transition"
+          >
+            <FiPlusSquare className="w-5 h-5 text-blue-600" />
+            Templates
+          </a>
         </nav>
       </div>
 

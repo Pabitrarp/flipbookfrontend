@@ -110,7 +110,7 @@ navigate("/");
 
         <button
           onClick={() => setContent('')}
-          className="mt-4 bg-red-600 text-white px-4 py-2 rounded"
+          className="mt-4 bg-red-600 text-white px-4 py-2 rounded cursor-pointer"
         >
           Clear Content
         </button>
@@ -121,7 +121,7 @@ navigate("/");
           type="file"
           multiple
           accept="image/*"
-          className="border p-2 rounded-md"
+          className="border p-2 rounded-md cursor-pointer"
           onChange={handleImageUpload}
         />
 
@@ -131,13 +131,13 @@ navigate("/");
           type="file"
           multiple
           accept="application/pdf"
-          className="border p-2 rounded-md"
+          className="border p-2 rounded-md cursor-pointer"
           onChange={handlePdfUpload}
         />
 
         <button
           onClick={mergeAndShowFlipbook}
-          className="bg-blue-600 text-white px-4 py-2 rounded mt-4 coser-pointer"
+          className="bg-blue-600 text-white px-4 py-2 rounded mt-4 cursor-pointer"
         >
           Create Flipbook
         </button>

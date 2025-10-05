@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+
+.dynamicstart-bg{
+     background-image: var(--templatestart-url) !important; 
+     background-size: cover;
+  background-position: center; 
+ background-repeat: no-repeat;
+}
+.dynamicend-bg{
+     background-image: var(--templateend-url) !important; 
+     background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
+}

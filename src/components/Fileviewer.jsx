@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef,useContext } from "react";
 import { useParams } from "react-router-dom";
 import { Layout } from "./Layout";
+import { Templateurl } from "../context/Templateurl";
 import HTMLFlipBook from "react-pageflip";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.mjs?url";
@@ -9,11 +10,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const Fileviewer = () => {
   const { id } = useParams();
+  const {templateurl}=useContext(Templateurl);
   const [pdfPages, setPdfPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [showShare, setShowShare] = useState(false);
+  
   const flipBook = useRef();
 
   useEffect(() => {
@@ -46,6 +49,15 @@ export const Fileviewer = () => {
     };
     loadPDF();
   }, [id]);
+
+useEffect(() => {
+  if (!loading && flipBook.current) {
+    const timer = setTimeout(() => {
+      flipBook.current.pageFlip().flipNext();
+    }, 800); // open the cover after load
+    return () => clearTimeout(timer);
+  }
+}, [loading]);  
 
   const goNext = () => {
     flipBook.current.pageFlip().flipNext();
@@ -81,9 +93,12 @@ export const Fileviewer = () => {
           mobileScrollSupport
           ref={flipBook}
           onFlip={(e) => setCurrentPage(e.data)}
+          usePortrait={false}     // 👈 IMPORTANT: shows 2 pages side-by-side
+  autoSize={true}
         >
-          <div className="bg-white flex items-center justify-center bg-cover bg-center bg-[url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSh6zKQpZZlZy4RnkXeMXslIklt9aZQdvLavA&s')]">
-            
+          <div
+  className={`bg-white flex items-center justify-center bg-cover bg-center  `}     >
+             <div className={`dynamicstart-bg w-full h-full object-contain`} style={{ '--templatestart-url': `url(${templateurl?.start?.replace(/\\/g, '/')})` }}></div>
           </div>
           {pdfPages.map((src, idx) => (
             <div key={idx} className="page bg-white">
@@ -94,8 +109,8 @@ export const Fileviewer = () => {
               />
             </div>
           ))}
-          <div className="page bg-white flex items-center justify-center bg-cover bg-center bg-[url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSh6zKQpZZlZy4RnkXeMXslIklt9aZQdvLavA&s')]">
-            <h2 className="text-center text-2xl font-bold">End of Flipbook</h2>
+          <div className=" bg-white flex items-center justify-center bg-cover bg-center ">
+             <div className={`dynamicend-bg w-full h-full `} style={{ '--templateend-url': `url(${templateurl?.end?.replace(/\\/g, '/')})` }}></div>
           </div>
         </HTMLFlipBook>
 
