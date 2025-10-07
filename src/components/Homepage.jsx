@@ -4,10 +4,13 @@ import html2pdf from 'html2pdf.js';
 import { PDFDocument } from 'pdf-lib';
 import {Layout} from './Layout';
 import { useNavigate } from 'react-router-dom';
+import { Modal } from './Modal';
 
 const Homepage = () => {
   const [content, setContent] = useState('');
   const [pdfFiles, setPdfFiles] = useState([]);
+  const [name,setName]=useState("");
+  const [isModalOpen,setIsModalOpen]=useState(false);
 const navigate = useNavigate();
   const editor = useRef(null);
 
@@ -47,6 +50,14 @@ const navigate = useNavigate();
   };
 
   const mergeAndShowFlipbook = async () => {
+    if(name===""){
+      alert("Please enter a name for the flipbook");
+      return;
+    }else if(content===""){
+      alert("Content cannot be empty");
+      return;
+    }
+    else{
     const contentPdfBlob = await htmlToPdfBlob();
     const mergedPdf = await PDFDocument.create();
 
@@ -69,7 +80,7 @@ const navigate = useNavigate();
  const finalPdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
 
   const formData = new FormData();
-  formData.append('file', finalPdfBlob, 'flipbook.pdf');
+  formData.append('file', finalPdfBlob, name);
 
   try {
     const response = await fetch('http://flipbook.mitchell-railgear.com/api/multer/upload', {
@@ -88,6 +99,7 @@ navigate("/");
   } catch (err) {
     console.error('Error uploading PDF:', err);
   }
+}
   };
 
   return (
@@ -136,7 +148,7 @@ navigate("/");
         />
 
         <button
-          onClick={mergeAndShowFlipbook}
+          onClick={()=>setIsModalOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded mt-4 cursor-pointer"
         >
           Create Flipbook
@@ -154,6 +166,19 @@ navigate("/");
       </div>
 
     </div>
+    <Modal IsOpen={isModalOpen} >
+       <div className='w-full p-2 flex justify-end'>
+                    <button className=' text-gray-600 hover:text-gray-800 font-bold text-2xl cursor-pointer' onClick={() => setIsModalOpen(false)}>X</button>
+                </div>
+        <div className='flex flex-col gap-8 w-96 mx-auto'>
+           <h2 className='text-2xl text-center text-black font-bold'>Enter A Flip Book Name </h2>
+          <input type="text" placeholder='Enter Name' className='border-blue-500  border outline-none p-2 rounded-md w-full' value={name} onChange={(e)=>setName(e.target.value)}/>
+          <div className='
+          flex justify-center'>
+            <button className=' py-2 px-6  rounded-lg bg-blue-500 text-white font-bold text-md cursor-pointer hover:bg-blue-400 hover:-translate-y-1 transform' onClick={mergeAndShowFlipbook}>Submit</button>
+          </div>
+        </div>
+    </Modal>
     </Layout>
   );
 };
