@@ -72,7 +72,7 @@ useEffect(() => {
   if (loading) return <div className="text-center mt-20">📄 Loading PDF...</div>;
 
   return (
-    <Layout>    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 p-4">
+    <Layout>    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-900 p-4">
       {/* Flipbook Container */}
       <div className="relative">
         {/* Previous Button */}
