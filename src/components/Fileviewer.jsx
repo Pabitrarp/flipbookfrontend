@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef,useContext } from "react";
+import { PDFDocument } from "pdf-lib";
 import { useParams } from "react-router-dom";
 import { Layout } from "./Layout";
 import { Templateurl } from "../context/Templateurl";
@@ -23,7 +24,8 @@ export const Fileviewer = () => {
     const loadPDF = async () => {
       try {
         const res = await fetch(`http://flipbook.mitchell-railgear.com/api/multer/file/${id}`);
-        const blob = await res.blob();
+        let blob = await res.blob();
+        blob = await removeBlankPages(blob);
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(blob))
           .promise;
         const pages = [];
@@ -49,6 +51,36 @@ export const Fileviewer = () => {
     };
     loadPDF();
   }, [id]);
+
+const removeBlankPages = async (pdfBlob) => {
+  const pdfBytes = await pdfBlob.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const newPdf = await PDFDocument.create();
+  const pages = pdfDoc.getPages();
+
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    const ops = page.node?.Normal?.get("Contents");
+
+    // ✅ Detect truly empty pages based on missing content streams
+    if (!ops || (Array.isArray(ops) && ops.length === 0)) continue;
+
+    // Copy non-blank pages
+    const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
+    newPdf.addPage(copiedPage);
+  }
+
+  // If somehow all pages were skipped, just keep original
+  if (newPdf.getPageCount() === 0) {
+    console.warn("⚠️ All pages detected as blank — keeping original PDF");
+    return pdfBlob;
+  }
+
+  const cleanedPdfBytes = await newPdf.save();
+  return new Blob([cleanedPdfBytes], { type: "application/pdf" });
+};
+
+
 
 useEffect(() => {
   if (!loading && flipBook.current) {
@@ -87,7 +119,7 @@ useEffect(() => {
 
         {/* Flipbook */}
         <HTMLFlipBook
-          width={400}
+          width={600}
           height={600}
           showCover
           mobileScrollSupport
@@ -95,6 +127,7 @@ useEffect(() => {
           onFlip={(e) => setCurrentPage(e.data)}
           usePortrait={false}     // 👈 IMPORTANT: shows 2 pages side-by-side
   autoSize={true}
+  className="flipbook-shadow"
         >
           <div
   className={`bg-white flex items-center justify-center bg-cover bg-center  `}     >
@@ -105,7 +138,7 @@ useEffect(() => {
               <img
                 src={src}
                 alt={`Page ${idx + 1}`}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-fill"
               />
             </div>
           ))}

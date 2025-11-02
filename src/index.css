@@ -14,3 +14,23 @@
   background-repeat: no-repeat;
   
 }
+/* Flipbook middle shadow effect */
+.flipbook-shadow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 30px; /* thickness of shadow */
+  height: 100%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 0.2)
+  );
+  z-index: 10;
+  border-radius: 4px;
+  mix-blend-mode: multiply;
+}

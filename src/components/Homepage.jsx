@@ -5,14 +5,15 @@ import { PDFDocument } from 'pdf-lib';
 import {Layout} from './Layout';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
-
+import Loader from './Loader';
 const Homepage = () => {
   const [page,setpage]=useState([{pageno:1,content:""}]);
   const [content, setContent] = useState('');
   const [pdfFiles, setPdfFiles] = useState([]);
   const [name,setName]=useState("");
   const [isModalOpen,setIsModalOpen]=useState(false);
-   const [currentPage, setCurrentPage] = useState(null);
+   const [currentPage, setCurrentPage] = useState(1);
+   const [loading, setLoading] = useState(false);
 const navigate = useNavigate();
   const editor = useRef(null);
 
@@ -63,27 +64,78 @@ const handleContentChange = (newContent) => {
   //   const pdfBlob = await html2pdf().set(opt).from(el).outputPdf('blob');
   //   return pdfBlob;
   // };
-  const htmlToPdfBlob = async (page) => {
+//   const htmlToPdfBlob = async (page) => {
+//   // Create a container for all pages
+//   const container = document.createElement("div");
+//   container.style.width = "210mm"; // A4 width
+//   container.style.minHeight = "297mm";
+//   container.style.background = "#fff";
+//   container.style.fontSize = "14px"; // preserve your editor font size
+//   container.style.fontFamily = "Arial, sans-serif";
+
+//   // Loop through all pages and add each to the container
+//   page.forEach((pg, index) => {
+//     if (!pg?.content || pg?.content.trim() === "") return;
+//     const pageDiv = document.createElement("div");
+//     pageDiv.style.width = "210mm";
+//     pageDiv.style.height = "297mm";
+//     pageDiv.style.overflow = "hidden";
+//     pageDiv.style.boxSizing = "border-box";
+//     pageDiv.style.padding = "20mm";
+//     pageDiv.innerHTML = pg.content;
+//     container.appendChild(pageDiv);
+//   });
+
+//   // PDF generation options
+//   const opt = {
+//     margin: 0,
+//     filename: "content.pdf",
+//     image: { type: "jpeg", quality: 0.98 },
+//     html2canvas: { scale: 2, useCORS: true },
+//     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+//   };
+
+//   // Generate and return as Blob
+//   const pdfBlob = await html2pdf().set(opt).from(container).outputPdf("blob");
+//   return pdfBlob;
+// };
+const htmlToPdfBlob = async (page) => {
   // Create a container for all pages
   const container = document.createElement("div");
   container.style.width = "210mm"; // A4 width
   container.style.minHeight = "297mm";
   container.style.background = "#fff";
-  container.style.fontSize = "14px"; // preserve your editor font size
+  container.style.fontSize = "18px"; // ✅ default font size
+  container.style.lineHeight = "1.5";
   container.style.fontFamily = "Arial, sans-serif";
+  container.style.margin = "0";
+  container.style.padding = "0";
+ 
 
   // Loop through all pages and add each to the container
-  page.forEach((pg, index) => {
+  page.forEach((pg) => {
+    if (!pg?.content || pg?.content.trim() === "") return; // skip blank content
+
     const pageDiv = document.createElement("div");
     pageDiv.style.width = "210mm";
-    pageDiv.style.height = "297mm";
+    pageDiv.style.height = "297mm"; // ✅ exact A4 height
     pageDiv.style.overflow = "hidden";
     pageDiv.style.boxSizing = "border-box";
     pageDiv.style.padding = "20mm";
-
+    pageDiv.style.margin = "0 auto";
+     pageDiv.style.pageBreakBefore = "auto";
+    pageDiv.style.pageBreakAfter = "always";
     pageDiv.innerHTML = pg.content;
+
     container.appendChild(pageDiv);
   });
+
+  // Prevent the last page from adding a blank one
+  if (container.lastElementChild) {
+    container.lastElementChild.style.pageBreakAfter = "avoid";
+    container.lastElementChild.style.display = "inline-block";
+    container.lastElementChild.style.pageBreakAfter = "auto";
+  }
 
   // PDF generation options
   const opt = {
@@ -92,12 +144,17 @@ const handleContentChange = (newContent) => {
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] }, // ✅ avoid blank page
   };
 
   // Generate and return as Blob
   const pdfBlob = await html2pdf().set(opt).from(container).outputPdf("blob");
   return pdfBlob;
 };
+
+
+
+
   const mergeAndShowFlipbook = async () => {
     if(name===""){
       alert("Please enter a name for the flipbook");
@@ -130,20 +187,22 @@ const handleContentChange = (newContent) => {
 
   const formData = new FormData();
   formData.append('file', finalPdfBlob, name);
-
+   setLoading(true);
   try {
     const response = await fetch('http://flipbook.mitchell-railgear.com/api/multer/upload', {
       method: 'POST',
       body: formData,
     });
-
+      
     if (!response.ok) {
+      setLoading(false);
       throw new Error('Failed to upload PDF');
     }
 
     const result = await response.json();
     console.log('Upload success:', result); 
     alert('Flipbook created successfully!');
+    setLoading(false);
 navigate("/");
   } catch (err) {
     console.error('Error uploading PDF:', err);
@@ -168,8 +227,9 @@ const handleSave = () => {
 
 
 
-  return (
-    <Layout>
+  return (<>
+    {loading==true ? (<Loader/>):
+    (<Layout>
       <div className="flex min-h-screen bg-blue-50 gap-2">
     
       <div className="sidebar w-[30%]  p-4 shadow-md rounded-lg flex flex-col gap-4 bg-blue-50">
@@ -294,7 +354,8 @@ const handleSave = () => {
           </div>
         </div>
     </Modal>
-    </Layout>
+    </Layout>)}
+    </>
   );
 };
 
