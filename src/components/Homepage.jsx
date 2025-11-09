@@ -26,8 +26,24 @@ const handleEdit = (pg) => {
     setCurrentPage(pg.pageno);
     setContent(pg.content || `edit pageno${pg.pageno}`);
   };
-
+const PAGE_HEIGHT_PX = 1122; // A4 height at 96 DPI
 const handleContentChange = (newContent) => {
+  const temp = document.createElement('div');
+  temp.style.width = '210mm';
+  temp.style.padding = '20mm';
+  temp.style.position = 'absolute';
+  temp.style.visibility = 'hidden';
+  temp.style.fontSize = '24px';
+  temp.innerHTML = newContent;
+  document.body.appendChild(temp);
+  const height = temp.scrollHeight;
+  document.body.removeChild(temp);
+
+  // 2️⃣ If content exceeds A4 height — show alert and stop typing
+  if (height > PAGE_HEIGHT_PX) {
+    alert('⚠️ Page is full — please add a new page.');
+    return; // prevent further writing
+  }
     setContent(newContent);
     setpage((prevPages) =>
       prevPages.map((p) =>
@@ -35,16 +51,81 @@ const handleContentChange = (newContent) => {
       )
     );
   };
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const imageTags = files
-      .map((file) => {
-        const url = URL.createObjectURL(file);
-        return `<img src="${url}" alt="Uploaded" style="width: 100%;" />`;
-      })
-      .join('');
-    setContent(prev => prev + imageTags);
-  };
+
+
+
+  // ===== 👇 ADD THESE TWO FUNCTIONS after handleContentChange() =====
+
+// Page height for A4 at 96 DPI
+
+
+// Measure total height of current editor HTML content
+const measureContentHeight = (html) => {
+  const temp = document.createElement('div');
+  temp.style.width = '210mm';
+  temp.style.padding = '20mm';
+  temp.style.position = 'absolute';
+  temp.style.visibility = 'hidden';
+  temp.style.fontSize = '24px';
+  temp.innerHTML = html;
+  document.body.appendChild(temp);
+  const height = temp.scrollHeight;
+  document.body.removeChild(temp);
+  return height;
+};
+
+// Handle image uploads and adjust height if needed
+const handleImageUpload = (e) => {
+  const files = Array.from(e.target.files);
+
+  files.forEach((file) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = url;
+
+    img.onload = () => {
+      const imageWidth = img.width;
+      const imageHeight = img.height;
+
+      const currentHeight = measureContentHeight(content);
+      const remainingHeight = PAGE_HEIGHT_PX - (currentHeight % PAGE_HEIGHT_PX);
+
+      // If image height is too tall, scale it down to fit remaining space
+      let scaledHeight = imageHeight;
+      let scaledWidth = imageWidth;
+
+      if (scaledHeight > remainingHeight) {
+        const scaleRatio = remainingHeight / scaledHeight;
+        scaledHeight = remainingHeight;
+        scaledWidth = imageWidth * scaleRatio;
+      }
+
+      // Insert image HTML
+      const imageTag = `
+        <div style="width: 100%; text-align: center; margin-top: 10px;">
+          <img 
+            src="${url}" 
+            alt="Uploaded" 
+            style="width: 100%; height: auto; max-height: ${remainingHeight}px; object-fit: contain;"
+          />
+        </div>
+      `;
+
+      setContent((prev) => prev + imageTag);
+    };
+  });
+};
+
+  // const handleImageUpload = (e) => {
+  //   const files = Array.from(e.target.files);
+  //   const imageTags = files
+  //     .map((file) => {
+  //       const url = URL.createObjectURL(file);
+  //       return `<img src="${url}" alt="Uploaded" style="width: 100%; margin-t" />`;
+  //     })
+  //     .join('');
+  //   setContent(prev => prev + imageTags);
+  // };
 
   const handlePdfUpload = (e) => {
     setPdfFiles(Array.from(e.target.files));
@@ -100,43 +181,35 @@ const handleContentChange = (newContent) => {
 //   return pdfBlob;
 // };
 const htmlToPdfBlob = async (page) => {
-  // Create a container for all pages
   const container = document.createElement("div");
-  container.style.width = "210mm"; // A4 width
-  container.style.minHeight = "297mm";
+  container.style.width = "210mm";
   container.style.background = "#fff";
-  container.style.fontSize = "18px"; // ✅ default font size
+  container.style.fontSize = "24px";
   container.style.lineHeight = "1.5";
   container.style.fontFamily = "Arial, sans-serif";
   container.style.margin = "0";
   container.style.padding = "0";
- 
 
-  // Loop through all pages and add each to the container
-  page.forEach((pg) => {
-    if (!pg?.content || pg?.content.trim() === "") return; // skip blank content
+  // ✅ Instead of forcing each to a separate PDF page,
+  // append them in sequence (continuous)
+  page.forEach((pg, index) => {
+    if (!pg?.content || pg?.content.trim() === "") return;
 
     const pageDiv = document.createElement("div");
     pageDiv.style.width = "210mm";
-    pageDiv.style.height = "297mm"; // ✅ exact A4 height
-    pageDiv.style.overflow = "hidden";
+    pageDiv.style.minHeight = "297mm";
     pageDiv.style.boxSizing = "border-box";
     pageDiv.style.padding = "20mm";
     pageDiv.style.margin = "0 auto";
-     pageDiv.style.pageBreakBefore = "auto";
-    pageDiv.style.pageBreakAfter = "always";
     pageDiv.innerHTML = pg.content;
+
+    // ✅ Only add page break AFTER each page except the last
+    // if (index < page.length - 1) {
+    //   pageDiv.style.pageBreakAfter = "always";
+    // }
 
     container.appendChild(pageDiv);
   });
-
-  // Prevent the last page from adding a blank one
-  if (container.lastElementChild) {
-    container.lastElementChild.style.pageBreakAfter = "avoid";
-    container.lastElementChild.style.display = "inline-block";
-    container.lastElementChild.style.pageBreakAfter = "auto";
-  }
-
   // PDF generation options
   const opt = {
     margin: 0,
@@ -167,12 +240,33 @@ const htmlToPdfBlob = async (page) => {
     const contentPdfBlob = await htmlToPdfBlob(page);
     const mergedPdf = await PDFDocument.create();
 
+    // const loadAndAppend = async (pdfBlob) => {
+    //   const pdfBytes = await pdfBlob.arrayBuffer();
+    //   const pdf = await PDFDocument.load(pdfBytes);
+    //   const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+    //   copiedPages.forEach((page) => mergedPdf.addPage(page));
+    // };
+
     const loadAndAppend = async (pdfBlob) => {
-      const pdfBytes = await pdfBlob.arrayBuffer();
-      const pdf = await PDFDocument.load(pdfBytes);
-      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-      copiedPages.forEach((page) => mergedPdf.addPage(page));
-    };
+  const pdfBytes = await pdfBlob.arrayBuffer();
+  const pdf = await PDFDocument.load(pdfBytes);
+  const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+
+  copiedPages.forEach((page, index) => {
+    const pageRef = pdf.getPage(index);
+    const { width, height } = pageRef.getSize();
+
+    // ⚙️ Detect empty page (no text, very small height, or white background)
+    const textContent = pageRef.getTextContent ? pageRef.getTextContent() : [];
+    const isBlank =
+      height < 50 || (textContent && textContent.items && textContent.items.length === 0);
+
+    if (!isBlank) {
+      mergedPdf.addPage(page);
+    }
+  });
+};
+
 
   
     await loadAndAppend(contentPdfBlob);
@@ -240,14 +334,21 @@ const handleSave = () => {
     ...config,
     height: 600, 
     minHeight:350,
-    defultfontsize:14,
-   readonly: false,
+    maxWidth:350,
+    readonly: false,
     toolbarAdaptive: false,
     toolbarSticky: false,
     askBeforePasteHTML: false,
     askBeforePasteFromWord: false,
     pastePlain: false, // allows rich text paste
     enableDragAndDropFileToEditor: true,
+    useFontSizeStyle: true,
+    defaultFontSize: '24',
+    style: {
+      fontSize: '24px',
+      lineHeight: '1.6',
+      fontFamily: 'Arial, sans-serif',
+    },
   }}
           tabIndex={1}
           onBlur={(newContent) => handleContentChange(newContent)}
@@ -304,12 +405,13 @@ const handleSave = () => {
       {page.map((pg) => (
         <div
           key={pg.pageno}
-          className="w-[210mm] h-[297mm] rounded-md bg-white shadow-md mx-auto my-4 p-5"
+          className="w-[210mm] h-[247mm] rounded-md bg-white shadow-md mx-auto my-4 p-5 "
         >
           {pg.content ? (
             <div
               dangerouslySetInnerHTML={{ __html: pg.content }}
               className="h-full w-full overflow-hidden break-words"
+              style={{ fontSize: '24px', lineHeight: '1.6' }}
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-gray-400 font-bold gap-2">
