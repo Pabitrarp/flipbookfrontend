@@ -144,9 +144,9 @@ useEffect(() => {
               />
             </div>
           ))}
-          <div className=" bg-white flex items-center justify-center bg-cover bg-center bg-url['https://officetemplatesonline.com/notebook-cover-page-templates/']">
-             {/* <div className={`dynamicend-bg w-full h-full `} style={{ '--templateend-url': `url(${templateurl?.end?.replace(/\\/g, '/')})` }}></div> */}
-          </div>
+          {/* <div className=" bg-white flex items-center justify-center bg-cover bg-center bg-url['https://officetemplatesonline.com/notebook-cover-page-templates/']">
+            
+          </div> */}
         </HTMLFlipBook>
 
         {/* Next Button */}

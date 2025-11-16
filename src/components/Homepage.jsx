@@ -180,50 +180,84 @@ const handleImageUpload = (e) => {
 //   const pdfBlob = await html2pdf().set(opt).from(container).outputPdf("blob");
 //   return pdfBlob;
 // };
-const htmlToPdfBlob = async (page) => {
+// const htmlToPdfBlob = async (page) => {
+//   const container = document.createElement("div");
+//   container.style.width = "210mm";
+//   container.style.background = "#fff";
+//   container.style.fontSize = "24px";
+//   container.style.lineHeight = "1.5";
+//   container.style.fontFamily = "Arial, sans-serif";
+//   container.style.margin = "0";
+//   container.style.padding = "0";
+
+//   // ✅ Instead of forcing each to a separate PDF page,
+//   // append them in sequence (continuous)
+//   page.forEach((pg, index) => {
+//     if (!pg?.content || pg?.content.trim() === "") return;
+
+//     const pageDiv = document.createElement("div");
+//     pageDiv.style.width = "210mm";
+//     pageDiv.style.minHeight = "297mm";
+//     pageDiv.style.boxSizing = "border-box";
+//     pageDiv.style.padding = "20mm";
+//     pageDiv.style.margin = "0 auto";
+//     pageDiv.innerHTML = pg.content;
+
+//     // ✅ Only add page break AFTER each page except the last
+//     // if (index < page.length - 1) {
+//     //   pageDiv.style.pageBreakAfter = "always";
+//     // }
+
+//     container.appendChild(pageDiv);
+//   });
+//   // PDF generation options
+//   const opt = {
+//     margin: 0,
+//     filename: "content.pdf",
+//     image: { type: "jpeg", quality: 0.98 },
+//     html2canvas: { scale: 2, useCORS: true },
+//     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+//     pagebreak: { mode: ["avoid-all", "css", "legacy"] }, // ✅ avoid blank page
+//   };
+
+//   // Generate and return as Blob
+//   const pdfBlob = await html2pdf().set(opt).from(container).outputPdf("blob");
+//   return pdfBlob;
+// };
+const htmlToPdfBlob = async (pages) => {
   const container = document.createElement("div");
   container.style.width = "210mm";
   container.style.background = "#fff";
   container.style.fontSize = "24px";
   container.style.lineHeight = "1.5";
   container.style.fontFamily = "Arial, sans-serif";
-  container.style.margin = "0";
-  container.style.padding = "0";
 
-  // ✅ Instead of forcing each to a separate PDF page,
-  // append them in sequence (continuous)
-  page.forEach((pg, index) => {
+  pages.forEach((pg) => {
     if (!pg?.content || pg?.content.trim() === "") return;
 
     const pageDiv = document.createElement("div");
     pageDiv.style.width = "210mm";
-    pageDiv.style.minHeight = "297mm";
     pageDiv.style.boxSizing = "border-box";
     pageDiv.style.padding = "20mm";
-    pageDiv.style.margin = "0 auto";
+    pageDiv.style.minHeight = "295mm";
+    
+    // ❌ IMPORTANT: REMOVE minHeight (was causing extra blank pages)
+    // pageDiv.style.minHeight = "297mm";
+
     pageDiv.innerHTML = pg.content;
-
-    // ✅ Only add page break AFTER each page except the last
-    // if (index < page.length - 1) {
-    //   pageDiv.style.pageBreakAfter = "always";
-    // }
-
     container.appendChild(pageDiv);
   });
-  // PDF generation options
+
   const opt = {
     margin: 0,
-    filename: "content.pdf",
-    image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["avoid-all", "css", "legacy"] }, // ✅ avoid blank page
+    pagebreak: false
   };
 
-  // Generate and return as Blob
-  const pdfBlob = await html2pdf().set(opt).from(container).outputPdf("blob");
-  return pdfBlob;
+  return await html2pdf().set(opt).from(container).outputPdf("blob");
 };
+
 
 
 
@@ -247,24 +281,31 @@ const htmlToPdfBlob = async (page) => {
     //   copiedPages.forEach((page) => mergedPdf.addPage(page));
     // };
 
-    const loadAndAppend = async (pdfBlob) => {
+//     const loadAndAppend = async (pdfBlob) => {
+//   const pdfBytes = await pdfBlob.arrayBuffer();
+//   const pdf = await PDFDocument.load(pdfBytes);
+//   const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+
+//   copiedPages.forEach((page, index) => {
+//     const pageRef = pdf.getPage(index);
+//     const { width, height } = pageRef.getSize();
+
+//     // ⚙️ Detect empty page (no text, very small height, or white background)
+//     const textContent = pageRef.getTextContent ? pageRef.getTextContent() : [];
+//     const isBlank =
+//       height < 50 || (textContent && textContent.items && textContent.items.length === 0);
+
+//     if (!isBlank) {
+//       mergedPdf.addPage(page);
+//     }
+//   });
+// };
+const loadAndAppend = async (pdfBlob) => {
   const pdfBytes = await pdfBlob.arrayBuffer();
   const pdf = await PDFDocument.load(pdfBytes);
-  const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
 
-  copiedPages.forEach((page, index) => {
-    const pageRef = pdf.getPage(index);
-    const { width, height } = pageRef.getSize();
-
-    // ⚙️ Detect empty page (no text, very small height, or white background)
-    const textContent = pageRef.getTextContent ? pageRef.getTextContent() : [];
-    const isBlank =
-      height < 50 || (textContent && textContent.items && textContent.items.length === 0);
-
-    if (!isBlank) {
-      mergedPdf.addPage(page);
-    }
-  });
+  const copied = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+  copied.forEach(page => mergedPdf.addPage(page));
 };
 
 
@@ -462,3 +503,4 @@ const handleSave = () => {
 };
 
 export default Homepage;
+   
