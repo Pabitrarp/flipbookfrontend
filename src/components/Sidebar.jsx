@@ -13,7 +13,7 @@ export const Sidebar = ({ user = "Administrator" }) => {
   };
 
   return (
-    <aside className="w-64 h-screen bg-white/80 backdrop-blur-md shadow-lg  flex flex-col justify-between sticky top-0">
+    <aside className="w-64 max-h-screen bg-white/80 backdrop-blur-md shadow-lg  flex flex-col justify-between sticky top-0">
       <div>
         {/* Logo */}
         {/* <div className="flex items-center gap-2 px-6 py-4 border-b">

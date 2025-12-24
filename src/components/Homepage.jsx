@@ -16,6 +16,8 @@ const Homepage = () => {
    const [loading, setLoading] = useState(false);
 const navigate = useNavigate();
   const editor = useRef(null);
+const scrollContainerRef = useRef(null);
+const pageRefs = useRef([]);
 
   const config = {
     readonly: false,
@@ -24,9 +26,9 @@ const navigate = useNavigate();
 
 const handleEdit = (pg) => {
     setCurrentPage(pg.pageno);
-    setContent(pg.content || `edit pageno${pg.pageno}`);
+    setContent(pg.content || '');
   };
-const PAGE_HEIGHT_PX = 1122; // A4 height at 96 DPI
+const PAGE_HEIGHT_PX = 1110 ; // A4 height at 96 DPI
 const handleContentChange = (newContent) => {
   const temp = document.createElement('div');
   temp.style.width = '210mm';
@@ -51,15 +53,6 @@ const handleContentChange = (newContent) => {
       )
     );
   };
-
-
-
-  // ===== 👇 ADD THESE TWO FUNCTIONS after handleContentChange() =====
-
-// Page height for A4 at 96 DPI
-
-
-// Measure total height of current editor HTML content
 const measureContentHeight = (html) => {
   const temp = document.createElement('div');
   temp.style.width = '210mm';
@@ -116,114 +109,13 @@ const handleImageUpload = (e) => {
   });
 };
 
-  // const handleImageUpload = (e) => {
-  //   const files = Array.from(e.target.files);
-  //   const imageTags = files
-  //     .map((file) => {
-  //       const url = URL.createObjectURL(file);
-  //       return `<img src="${url}" alt="Uploaded" style="width: 100%; margin-t" />`;
-  //     })
-  //     .join('');
-  //   setContent(prev => prev + imageTags);
-  // };
+ 
 
   const handlePdfUpload = (e) => {
     setPdfFiles(Array.from(e.target.files));
   };
 
-  // Convert HTML to PDF blob
-  // const htmlToPdfBlob = async () => {
-  //   const el = document.createElement('div');
-  //   el.innerHTML = content;
-  //   const opt = {
-  //     margin: 1,
-  //     filename: 'content.pdf',
-  //     image: { type: 'jpeg', quality: 0.98 },
-  //     html2canvas: {},
-  //     jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-  //   };
-  //   const pdfBlob = await html2pdf().set(opt).from(el).outputPdf('blob');
-  //   return pdfBlob;
-  // };
-//   const htmlToPdfBlob = async (page) => {
-//   // Create a container for all pages
-//   const container = document.createElement("div");
-//   container.style.width = "210mm"; // A4 width
-//   container.style.minHeight = "297mm";
-//   container.style.background = "#fff";
-//   container.style.fontSize = "14px"; // preserve your editor font size
-//   container.style.fontFamily = "Arial, sans-serif";
 
-//   // Loop through all pages and add each to the container
-//   page.forEach((pg, index) => {
-//     if (!pg?.content || pg?.content.trim() === "") return;
-//     const pageDiv = document.createElement("div");
-//     pageDiv.style.width = "210mm";
-//     pageDiv.style.height = "297mm";
-//     pageDiv.style.overflow = "hidden";
-//     pageDiv.style.boxSizing = "border-box";
-//     pageDiv.style.padding = "20mm";
-//     pageDiv.innerHTML = pg.content;
-//     container.appendChild(pageDiv);
-//   });
-
-//   // PDF generation options
-//   const opt = {
-//     margin: 0,
-//     filename: "content.pdf",
-//     image: { type: "jpeg", quality: 0.98 },
-//     html2canvas: { scale: 2, useCORS: true },
-//     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-//   };
-
-//   // Generate and return as Blob
-//   const pdfBlob = await html2pdf().set(opt).from(container).outputPdf("blob");
-//   return pdfBlob;
-// };
-// const htmlToPdfBlob = async (page) => {
-//   const container = document.createElement("div");
-//   container.style.width = "210mm";
-//   container.style.background = "#fff";
-//   container.style.fontSize = "24px";
-//   container.style.lineHeight = "1.5";
-//   container.style.fontFamily = "Arial, sans-serif";
-//   container.style.margin = "0";
-//   container.style.padding = "0";
-
-//   // ✅ Instead of forcing each to a separate PDF page,
-//   // append them in sequence (continuous)
-//   page.forEach((pg, index) => {
-//     if (!pg?.content || pg?.content.trim() === "") return;
-
-//     const pageDiv = document.createElement("div");
-//     pageDiv.style.width = "210mm";
-//     pageDiv.style.minHeight = "297mm";
-//     pageDiv.style.boxSizing = "border-box";
-//     pageDiv.style.padding = "20mm";
-//     pageDiv.style.margin = "0 auto";
-//     pageDiv.innerHTML = pg.content;
-
-//     // ✅ Only add page break AFTER each page except the last
-//     // if (index < page.length - 1) {
-//     //   pageDiv.style.pageBreakAfter = "always";
-//     // }
-
-//     container.appendChild(pageDiv);
-//   });
-//   // PDF generation options
-//   const opt = {
-//     margin: 0,
-//     filename: "content.pdf",
-//     image: { type: "jpeg", quality: 0.98 },
-//     html2canvas: { scale: 2, useCORS: true },
-//     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-//     pagebreak: { mode: ["avoid-all", "css", "legacy"] }, // ✅ avoid blank page
-//   };
-
-//   // Generate and return as Blob
-//   const pdfBlob = await html2pdf().set(opt).from(container).outputPdf("blob");
-//   return pdfBlob;
-// };
 const htmlToPdfBlob = async (pages) => {
   const container = document.createElement("div");
   container.style.width = "210mm";
@@ -274,32 +166,7 @@ const htmlToPdfBlob = async (pages) => {
     const contentPdfBlob = await htmlToPdfBlob(page);
     const mergedPdf = await PDFDocument.create();
 
-    // const loadAndAppend = async (pdfBlob) => {
-    //   const pdfBytes = await pdfBlob.arrayBuffer();
-    //   const pdf = await PDFDocument.load(pdfBytes);
-    //   const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-    //   copiedPages.forEach((page) => mergedPdf.addPage(page));
-    // };
 
-//     const loadAndAppend = async (pdfBlob) => {
-//   const pdfBytes = await pdfBlob.arrayBuffer();
-//   const pdf = await PDFDocument.load(pdfBytes);
-//   const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-
-//   copiedPages.forEach((page, index) => {
-//     const pageRef = pdf.getPage(index);
-//     const { width, height } = pageRef.getSize();
-
-//     // ⚙️ Detect empty page (no text, very small height, or white background)
-//     const textContent = pageRef.getTextContent ? pageRef.getTextContent() : [];
-//     const isBlank =
-//       height < 50 || (textContent && textContent.items && textContent.items.length === 0);
-
-//     if (!isBlank) {
-//       mergedPdf.addPage(page);
-//     }
-//   });
-// };
 const loadAndAppend = async (pdfBlob) => {
   const pdfBytes = await pdfBlob.arrayBuffer();
   const pdf = await PDFDocument.load(pdfBytes);
@@ -355,9 +222,6 @@ const handleSave = () => {
       )
     );
 
-    // Optional: clear editor after save
-    // setContent("");
-    // setSelectedPage(null);
   };
 
 
@@ -367,8 +231,9 @@ const handleSave = () => {
     (<Layout>
       <div className="flex min-h-screen bg-blue-50 gap-2">
     
-      <div className="sidebar w-[30%]  p-4 shadow-md rounded-lg flex flex-col gap-4 bg-blue-50">
-        <JoditEditor
+      <div className="sidebar w-[30%]  p-4 shadow-md rounded-lg flex flex-col gap-4 bg-blue-50 sticky top-15 h-screen">
+       <div className='overflow-y-auto w-full flex flex-col gap-4'>
+         <JoditEditor
           ref={editor}
           value={content}
            config={{
@@ -403,12 +268,34 @@ const handleSave = () => {
         >
           Save Content
         </button>
-        <button
+        {/* <button
           onClick={() => setpage(prev=>[...prev,{pageno:prev.length+1,content:""}])}
           className="mt-4 bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
         >
          + Add Page
-        </button>
+        </button> */}
+        <button
+  onClick={() => {
+    setpage((prev) => {
+      const newPages = [...prev, { pageno: prev.length + 1, content: "" }];
+      
+      // Wait for DOM update → then scroll to new page
+      setTimeout(() => {
+        const lastIndex = newPages.length - 1;
+        const targetDiv = pageRefs.current[lastIndex];
+        if (targetDiv) {
+          targetDiv.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 200);
+
+      return newPages;
+    });
+  }}
+  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
+>
+  + Add Page
+</button>
+
 
        </div>
         <label htmlFor="image" className="capitalize font-medium">Upload Image</label>
@@ -437,16 +324,18 @@ const handleSave = () => {
         >
           Create Flipbook
         </button>
+       </div>
       </div>
 
       {/* Content Preview */}
-      <div className="content w-full p-2 ">
+      <div className="content w-full p-2 overflow-y-auto">
         <div className=" rounded flex gap-5 grid grid-cols-1 ">
 {/* Pages Preview */}
       {page.map((pg) => (
         <div
           key={pg.pageno}
-          className="w-[210mm] h-[247mm] rounded-md bg-white shadow-md mx-auto my-4 p-5 "
+           ref={(el) => (pageRefs.current[pg.pageno - 1] = el)}
+          className={`w-[210mm] h-[247mm] rounded-md bg-white shadow-md mx-auto my-4 p-5 $`}
         >
           {pg.content ? (
             <div

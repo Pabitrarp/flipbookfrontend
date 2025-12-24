@@ -4,8 +4,12 @@ import {Header} from './Header.jsx'
 export const Layout = ({children}) => {
   return (
     <div>
-        <Header />
-        {children}
+        
+          <Header />
+    
+        <div>
+           {children}
+        </div>
     </div>
   )
 }
