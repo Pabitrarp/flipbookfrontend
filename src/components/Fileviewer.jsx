@@ -82,14 +82,7 @@ const removeBlankPages = async (pdfBlob) => {
 
 
 
-useEffect(() => {
-  if (!loading && flipBook.current) {
-    const timer = setTimeout(() => {
-      flipBook.current.pageFlip().flipNext();
-    }, 800); // open the cover after load
-    return () => clearTimeout(timer);
-  }
-}, [loading]);  
+  
 
   const goNext = () => {
     flipBook.current.pageFlip().flipNext();
@@ -129,12 +122,7 @@ useEffect(() => {
   autoSize={true}
   className="flipbook-shadow"
         >
-          <div
-  className={`bg-white flex items-center justify-center bg-cover bg-center bg-url['bg-url['https://officetemplatesonline.com/notebook-cover-page-templates/']'] `}  style={{
-    backgroundImage: "url('https://officetemplatesonline.com/notebook-cover-page-templates/')",
-  }}   >
-             {/* <div className={`dynamicstart-bg w-full h-full object-contain`} style={{ '--templatestart-url': `url(${templateurl?.start?.replace(/\\/g, '/')})` }}></div> */}
-          </div>
+         
           {pdfPages.map((src, idx) => (
             <div key={idx} className="page bg-white">
               <img
