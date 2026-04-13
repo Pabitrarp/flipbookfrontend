@@ -23,8 +23,8 @@ export const Dashboard = () => {
     fetchData();
   }, []);
 
-  const handleOpenFlipbook = (fileId) => {
-    navigate(`/flipbook/${fileId}`);
+  const handleOpenFlipbook = (fileId,name) => {
+    navigate(`/flipbook/${name}/${fileId}`);
   };
 const handledeleteFlipbook = async (fileId) => {
   try {
@@ -76,7 +76,7 @@ const handledeleteFlipbook = async (fileId) => {
               </p>
               <div className='flex gap-4'>
                 <button
-                onClick={() => handleOpenFlipbook(file._id)}
+                onClick={() => handleOpenFlipbook(file._id,file.originalName)}
                 className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
               >
                 📖 Open Flipbook

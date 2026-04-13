@@ -17,13 +17,23 @@ export const Fileviewer = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [showShare, setShowShare] = useState(false);
-  
+  const [fileName, setFileName] = useState("");
   const flipBook = useRef();
 
   useEffect(() => {
     const loadPDF = async () => {
       try {
         const res = await fetch(`http://flipbook.mitchell-railgear.com/api/multer/file/${id}`);
+            const contentDisposition = res.headers.get("content-disposition");
+
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+?)"?$/);
+      if (match) {
+        setFileName(match[1]);
+      }
+    }
+
+    console.log("File Name:", fileName);
         let blob = await res.blob();
         blob = await removeBlankPages(blob);
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(blob))
@@ -99,6 +109,9 @@ const removeBlankPages = async (pdfBlob) => {
   return (
     <Layout>    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-900 p-4">
       {/* Flipbook Container */}
+            <h2 style={{ textAlign: "center", marginBottom: "10px",color:"white",fontWeight: "bold" }}>
+  📘 {fileName || "Loading..."}
+</h2>
       <div className="relative">
         {/* Previous Button */}
         {currentPage > 0 && (
@@ -113,7 +126,7 @@ const removeBlankPages = async (pdfBlob) => {
         {/* Flipbook */}
         <HTMLFlipBook
           width={600}
-          height={600}
+          height={650}
           showCover
           mobileScrollSupport
           ref={flipBook}
@@ -132,9 +145,7 @@ const removeBlankPages = async (pdfBlob) => {
               />
             </div>
           ))}
-          {/* <div className=" bg-white flex items-center justify-center bg-cover bg-center bg-url['https://officetemplatesonline.com/notebook-cover-page-templates/']">
-            
-          </div> */}
+          
         </HTMLFlipBook>
 
         {/* Next Button */}

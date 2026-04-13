@@ -1,395 +1,566 @@
-import React, { useState, useRef } from 'react';
-import JoditEditor from 'jodit-react';
-import html2pdf from 'html2pdf.js';
-import { PDFDocument } from 'pdf-lib';
-import {Layout} from './Layout';
-import { useNavigate } from 'react-router-dom';
-import { Modal } from './Modal';
-import Loader from './Loader';
+import React, { useState, useRef } from "react";
+import JoditEditor from "jodit-react";
+import html2pdf from "html2pdf.js";
+import { PDFDocument } from "pdf-lib";
+import { Layout } from "./Layout";
+import { Modal } from "./Modal";
+import Loader from "./Loader";
+import { useNavigate } from "react-router-dom";
+
 const Homepage = () => {
-  const [page,setpage]=useState([{pageno:1,content:""}]);
-  const [content, setContent] = useState('');
-  const [pdfFiles, setPdfFiles] = useState([]);
-  const [name,setName]=useState("");
-  const [isModalOpen,setIsModalOpen]=useState(false);
-   const [currentPage, setCurrentPage] = useState(1);
-   const [loading, setLoading] = useState(false);
+
 const navigate = useNavigate();
-  const editor = useRef(null);
-const scrollContainerRef = useRef(null);
-const pageRefs = useRef([]);
 
-  const config = {
-    readonly: false,
-    placeholder: 'Start writing your content here...',
-  };
+const PAGE_HEIGHT_PX = 1110;
 
-const handleEdit = (pg) => {
-    setCurrentPage(pg.pageno);
-    setContent(pg.content || '');
-  };
-const PAGE_HEIGHT_PX = 1110 ; // A4 height at 96 DPI
-const handleContentChange = (newContent) => {
-  const temp = document.createElement('div');
-  temp.style.width = '210mm';
-  temp.style.padding = '20mm';
-  temp.style.position = 'absolute';
-  temp.style.visibility = 'hidden';
-  temp.style.fontSize = '24px';
-  temp.innerHTML = newContent;
-  document.body.appendChild(temp);
-  const height = temp.scrollHeight;
-  document.body.removeChild(temp);
+const editorRefs = useRef({});
 
-  // 2️⃣ If content exceeds A4 height — show alert and stop typing
-  if (height > PAGE_HEIGHT_PX) {
-    alert('⚠️ Page is full — please add a new page.');
-    return; // prevent further writing
-  }
-    setContent(newContent);
-    setpage((prevPages) =>
-      prevPages.map((p) =>
-        p.pageno === currentPage ? { ...p, content: newContent } : p
-      )
-    );
-  };
-const measureContentHeight = (html) => {
-  const temp = document.createElement('div');
-  temp.style.width = '210mm';
-  temp.style.padding = '20mm';
-  temp.style.position = 'absolute';
-  temp.style.visibility = 'hidden';
-  temp.style.fontSize = '24px';
-  temp.innerHTML = html;
-  document.body.appendChild(temp);
-  const height = temp.scrollHeight;
-  document.body.removeChild(temp);
-  return height;
+const [pages,setPages] = useState([
+{
+pageno:1,
+content:"",
+pdfFiles:[],
+open:true
+}
+]);
+
+const [name,setName] = useState("");
+const [loading,setLoading] = useState(false);
+const [isModalOpen,setIsModalOpen] = useState(false);
+const [pageImages, setPageImages] = useState({});
+const [pdff,setpdff]=useState({});
+const config = {
+readonly:false,
+placeholder:"Write content here...",
+height:350,
+ enableDragAndDropFileToEditor: true,
+  askBeforePasteHTML: false,
+  askBeforePasteFromWord: false,
+  defaultActionOnPaste: "insert_as_html",
 };
 
-// Handle image uploads and adjust height if needed
-const handleImageUpload = (e) => {
+
+
+/* PAGE TOGGLE */
+
+const togglePage = (index) => {
+
+setPages(prev =>
+prev.map((p,i)=>
+i===index ? {...p,open:!p.open} : p
+)
+);
+
+};
+
+
+
+/* ADD PAGE */
+
+const addPage = () => {
+
+setPages(prev=>[
+...prev,
+{
+pageno:prev.length+1,
+content:"",
+pdfFiles:[],
+open:true
+}
+]);
+
+};
+/* MEASURE HEIGHT */
+
+const measureContentHeight = (html)=>{
+
+const temp=document.createElement("div");
+
+temp.style.width="210mm";
+temp.style.padding="20mm";
+temp.style.position="absolute";
+temp.style.visibility="hidden";
+temp.style.fontSize="24px";
+
+temp.innerHTML=html;
+
+document.body.appendChild(temp);
+
+const height=temp.scrollHeight;
+
+document.body.removeChild(temp);
+
+return height;
+
+};
+
+
+
+/* SAVE BUTTON */
+
+const savePageContent = (index)=>{
+
+const editor = editorRefs.current[index];
+
+if(!editor) return;
+const html = editor.value || editor.editor?.value || "";
+
+const height = measureContentHeight(html);
+
+if(height > PAGE_HEIGHT_PX){
+
+alert("⚠ Page is full. Please create a new page.");
+return;
+
+}
+
+setPages(prev=>{
+
+const updated=[...prev];
+
+updated[index].content = html;
+
+return updated;
+
+});
+
+};
+
+
+
+/* IMAGE UPLOAD */
+
+// const handleImageUpload=(index,e)=>{
+ 
+// const files=Array.from(e.target.files);
+//  setPageImages(prev => ({
+//     ...prev,
+//     [index]: [
+//       ...(prev[index] || []),
+//       ...files
+//     ]
+//   }));
+// const editor = editorRefs.current[index];
+// if(!editor) return;
+
+// files.forEach(file=>{
+
+// const signature=file.name+file.size;
+
+// const currentContent = editor.value || editor.editor?.value || "";
+
+// if(currentContent.includes(signature)) return;
+
+// const url=URL.createObjectURL(file);
+
+// editor.value += `
+// <div data-img="${signature}" style="text-align:center;margin-top:10px;">
+// <img src="${url}" style="width:100%;height:auto;" />
+// </div>
+// `;
+
+// });
+
+// e.target.value="";
+
+// };
+
+const handleImageUpload = (index, e) => {
+
   const files = Array.from(e.target.files);
 
-  files.forEach((file) => {
+  setPageImages(prev => ({
+    ...prev,
+    [index]: [
+      ...(prev[index] || []),
+      ...files
+    ]
+  }));
+
+  files.forEach(file => {
+
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.src = url;
 
     img.onload = () => {
-      const imageWidth = img.width;
-      const imageHeight = img.height;
 
-      const currentHeight = measureContentHeight(content);
-      const remainingHeight = PAGE_HEIGHT_PX - (currentHeight % PAGE_HEIGHT_PX);
+      // ✅ RE-GET editor inside onload
+      const editor = editorRefs.current[index];
+      if (!editor) return;
 
-      // If image height is too tall, scale it down to fit remaining space
-      let scaledHeight = imageHeight;
-      let scaledWidth = imageWidth;
+      const currentContent =
+        editor.value || editor.editor?.value || "";
 
-      if (scaledHeight > remainingHeight) {
-        const scaleRatio = remainingHeight / scaledHeight;
-        scaledHeight = remainingHeight;
-        scaledWidth = imageWidth * scaleRatio;
-      }
+      const currentHeight = measureContentHeight(currentContent);
 
-      // Insert image HTML
+      const remainingHeight =
+        PAGE_HEIGHT_PX - (currentHeight % PAGE_HEIGHT_PX);
+
+      const signature = file.name + file.size;
+
+      if (currentContent.includes(signature)) return;
+
       const imageTag = `
-        <div style="width: 100%; text-align: center; margin-top: 10px;">
+        <div data-img="${signature}" style="text-align:center;margin-top:10px;">
           <img 
             src="${url}" 
-            alt="Uploaded" 
-            style="width: 100%; height: auto; max-height: ${remainingHeight}px; object-fit: contain;"
+            style="
+              width:100%;
+              height:auto;
+              max-height:${remainingHeight-10}px;
+              object-fit:contain;
+            "
           />
         </div>
       `;
 
-      setContent((prev) => prev + imageTag);
+      // ✅ SAFE SET VALUE
+      if (editor.value !== undefined) {
+        editor.value = currentContent + imageTag;
+      } else if (editor.editor) {
+        editor.editor.value = currentContent + imageTag;
+      }
+
     };
   });
+
+  e.target.value = "";
 };
 
- 
-
-  const handlePdfUpload = (e) => {
-    setPdfFiles(Array.from(e.target.files));
-  };
 
 
-const htmlToPdfBlob = async (pages) => {
+/* PDF UPLOAD */
+
+const handlePdfUpload=(index,e)=>{
+
+const files = Array.from(e.target.files);
+setpdff(prev => ({
+    ...prev,
+    [index]: [
+      ...(prev[index] || []),
+      ...files
+    ]
+  }));
+
+setPages(prev=>{
+
+const updated=[...prev];
+
+files.forEach(file=>{
+
+const exists = updated[index].pdfFiles.some(
+f=>f.name===file.name && f.size===file.size
+);
+
+if(!exists){
+updated[index].pdfFiles.push(file);
+}
+
+});
+
+return updated;
+
+});
+
+e.target.value="";
+
+};
+
+
+
+/* HTML → PDF */
+
+const pageToPdfBlob = async (html) => {
+
   const container = document.createElement("div");
-  container.style.width = "210mm";
-  container.style.background = "#fff";
-  container.style.fontSize = "24px";
-  container.style.lineHeight = "1.5";
-  container.style.fontFamily = "Arial, sans-serif";
+  const pageDiv = document.createElement("div"); // ✅ FIX
 
-  pages.forEach((pg) => {
-    if (!pg?.content || pg?.content.trim() === "") return;
+  pageDiv.style.width = "210mm";
+  pageDiv.style.padding = "20mm";
+  pageDiv.style.minHeight = "295mm";
+  pageDiv.style.fontSize = "24px";
 
-    const pageDiv = document.createElement("div");
-    pageDiv.style.width = "210mm";
-    pageDiv.style.boxSizing = "border-box";
-    pageDiv.style.padding = "20mm";
-    pageDiv.style.minHeight = "295mm";
-    
-    // ❌ IMPORTANT: REMOVE minHeight (was causing extra blank pages)
-    // pageDiv.style.minHeight = "297mm";
+  pageDiv.innerHTML = html;
 
-    pageDiv.innerHTML = pg.content;
-    container.appendChild(pageDiv);
-  });
+  container.appendChild(pageDiv);
 
   const opt = {
     margin: 0,
     html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: false
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait"
+    }
   };
 
-  return await html2pdf().set(opt).from(container).outputPdf("blob");
+  const blob = await html2pdf()
+    .set(opt)
+    .from(container)
+    .outputPdf("blob");
+
+  container.remove();
+
+  return blob;
 };
 
 
 
+/* CREATE FLIPBOOK */
 
+const mergeAndShowFlipbook = async ()=>{
 
-  const mergeAndShowFlipbook = async () => {
-    if(name===""){
-      alert("Please enter a name for the flipbook");
-      return;
-    }else if(content===""){
-      alert("Content cannot be empty");
-      return;
-    }
-    else{
-    const contentPdfBlob = await htmlToPdfBlob(page);
-    const mergedPdf = await PDFDocument.create();
-
-
-const loadAndAppend = async (pdfBlob) => {
-  const pdfBytes = await pdfBlob.arrayBuffer();
-  const pdf = await PDFDocument.load(pdfBytes);
-
-  const copied = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-  copied.forEach(page => mergedPdf.addPage(page));
-};
-
-
-  
-    await loadAndAppend(contentPdfBlob);
-
-    
-    for (const file of pdfFiles) {
-      await loadAndAppend(file);
-    }
-
-    const finalPdfBytes = await mergedPdf.save();
- const finalPdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
-
-  const formData = new FormData();
-  formData.append('file', finalPdfBlob, name);
-   setLoading(true);
-  try {
-    const response = await fetch('http://flipbook.mitchell-railgear.com/api/multer/upload', {
-      method: 'POST',
-      body: formData,
-    });
-      
-    if (!response.ok) {
-      setLoading(false);
-      throw new Error('Failed to upload PDF');
-    }
-
-    const result = await response.json();
-    console.log('Upload success:', result); 
-    alert('Flipbook created successfully!');
-    setLoading(false);
-navigate("/");
-  } catch (err) {
-    console.error('Error uploading PDF:', err);
-  }
+if(name===""){
+alert("Enter Flipbook Name");
+return;
 }
-  };
 
-const handleSave = () => {
-    if (currentPage === null) return;
-
-    // Update only the selected page content
-    setpage((prev) =>
-      prev.map((p) =>
-        p.pageno === currentPage ? { ...p, content } : p
-      )
-    );
-
-  };
+setLoading(true);
 
 
 
-  return (<>
-    {loading==true ? (<Loader/>):
-    (<Layout>
-      <div className="flex min-h-screen bg-blue-50 gap-2">
-    
-      <div className="sidebar w-[30%]  p-4 shadow-md rounded-lg flex flex-col gap-4 bg-blue-50 sticky top-15 h-screen">
-       <div className='overflow-y-auto w-full flex flex-col gap-4'>
-         <JoditEditor
-          ref={editor}
-          value={content}
-           config={{
-    ...config,
-    height: 600, 
-    minHeight:350,
-    maxWidth:350,
-    readonly: false,
-    toolbarAdaptive: false,
-    toolbarSticky: false,
-    askBeforePasteHTML: false,
-    askBeforePasteFromWord: false,
-    pastePlain: false, // allows rich text paste
-    enableDragAndDropFileToEditor: true,
-    useFontSizeStyle: true,
-    defaultFontSize: '24',
-    style: {
-      fontSize: '24px',
-      lineHeight: '1.6',
-      fontFamily: 'Arial, sans-serif',
-    },
-  }}
-          tabIndex={1}
-          onBlur={(newContent) => handleContentChange(newContent)}
-          style={{ minHeight: '40vh' }}
-        />
 
-       <div className='gap-2 flex justify-between'>
-         <button
-          onClick={handleSave}
-          className="mt-4 bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
-        >
-          Save Content
-        </button>
-        {/* <button
-          onClick={() => setpage(prev=>[...prev,{pageno:prev.length+1,content:""}])}
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
-        >
-         + Add Page
-        </button> */}
-        <button
-  onClick={() => {
-    setpage((prev) => {
-      const newPages = [...prev, { pageno: prev.length + 1, content: "" }];
-      
-      // Wait for DOM update → then scroll to new page
-      setTimeout(() => {
-        const lastIndex = newPages.length - 1;
-        const targetDiv = pageRefs.current[lastIndex];
-        if (targetDiv) {
-          targetDiv.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 200);
 
-      return newPages;
+
+
+const mergedPdf=await PDFDocument.create();
+
+const appendPdf = async (blob)=>{
+
+const bytes=await blob.arrayBuffer();
+
+const pdf=await PDFDocument.load(bytes);
+const copiedPages=await mergedPdf.copyPages(pdf,pdf.getPageIndices());
+
+copiedPages.forEach(p=>mergedPdf.addPage(p));
+
+};
+
+
+for(const pg of pages){
+
+if(pg.content && pg.content.trim()!==""){
+
+const pageBlob=await pageToPdfBlob(pg.content);
+
+await appendPdf(pageBlob);
+
+}
+
+for(const file of pg.pdfFiles){
+
+await appendPdf(file);
+
+}
+
+}
+
+
+const finalBytes=await mergedPdf.save();
+
+const finalBlob=new Blob([finalBytes],{type:"application/pdf"});
+
+const formData=new FormData();
+
+formData.append("file",finalBlob,name);
+try{
+
+const response=await fetch(
+"http://flipbook.mitchell-railgear.com/api/multer/upload",
+{
+method:"POST",
+body:formData
+}
+);
+
+setLoading(false);
+
+if(response.ok){
+
+alert("Flipbook Created");
+navigate("/");
+
+}
+
+}catch(err){
+
+console.error(err);
+setLoading(false);
+
+}
+
+};
+
+
+
+return(
+<>
+
+{loading ? <Loader/> : (
+
+<Layout>
+
+<div className="flex min-h-screen bg-blue-50 ">
+
+{/* LEFT PANEL */}
+
+<div className="fixed h-screen overflow-y-auto p-4 bg-white shadow w-[26%]">
+
+{pages.map((pg,index)=>(
+
+<div key={pg.pageno} className="border mb-4 rounded">
+
+<div
+className="bg-blue-600 text-white p-3 cursor-pointer"
+onClick={()=>togglePage(index)}
+>
+Page {pg.pageno}
+</div>
+
+{pg.open && (
+
+<div className="p-3">
+
+<JoditEditor
+  ref={(el)=>editorRefs.current[index]=el}
+  value={pg.content}
+  config={config}
+  onBlur={(newContent)=>{
+    setPages(prev=>{
+      const updated=[...prev];
+      updated[index].content=newContent;
+      return updated;
     });
   }}
-  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
+/>
+<button
+onClick={()=>savePageContent(index)}
+className="bg-green-600 text-white px-3 py-1 mt-2 rounded"
 >
-  + Add Page
+Save Changes
 </button>
 
+<label className="block mt-3">Upload Image</label>
 
-       </div>
-        <label htmlFor="image" className="capitalize font-medium">Upload Image</label>
-        <input
-          id="image"
-          type="file"
-          multiple
-          accept="image/*"
-          className="border p-2 rounded-md cursor-pointer"
-          onChange={handleImageUpload}
-        />
-
-        <label htmlFor="file" className="capitalize font-medium">Upload PDF File</label>
-        <input
-          id="file"
-          type="file"
-          multiple
-          accept="application/pdf"
-          className="border p-2 rounded-md cursor-pointer"
-          onChange={handlePdfUpload}
-        />
-
-        <button
-          onClick={()=>setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded mt-4 cursor-pointer"
-        >
-          Create Flipbook
-        </button>
-       </div>
-      </div>
-
-      {/* Content Preview */}
-      <div className="content w-full p-2 overflow-y-auto">
-        <div className=" rounded flex gap-5 grid grid-cols-1 ">
-{/* Pages Preview */}
-      {page.map((pg) => (
-        <div
-          key={pg.pageno}
-           ref={(el) => (pageRefs.current[pg.pageno - 1] = el)}
-          className={`w-[210mm] h-[247mm] rounded-md bg-white shadow-md mx-auto my-4 p-5 $`}
-        >
-          {pg.content ? (
-            <div
-              dangerouslySetInnerHTML={{ __html: pg.content }}
-              className="h-full w-full overflow-hidden break-words"
-              style={{ fontSize: '24px', lineHeight: '1.6' }}
-            />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center text-gray-400 font-bold gap-2">
-              Page {pg.pageno} - No Content{" "}
-              <button
-                onClick={() => handleEdit(pg)}
-                className="border px-2 rounded text-white bg-blue-600 cursor-pointer"
-              >
-                Edit
-              </button>
-            </div>
-          )}
-          {pg.content && (
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => handleEdit(pg)}
-                className="border px-2 rounded text-white bg-blue-600 cursor-pointer"
-              >
-                Edit
-              </button>
-            </div>
-          )}
-        </div>
-        
+<input
+type="file"
+multiple
+accept="image/*"
+onChange={(e)=>handleImageUpload(index,e)}
+className="border p-2 rounded-lg"
+/>
+ <ul>
+      {(pageImages[index] || []).map((file, i) => (
+        <li key={i}>{file.name}</li>
       ))}
+    </ul>
+<label className="block mt-3">Upload PDF</label>
 
-          
-        </div>
-      </div>
+<input
+type="file"
+multiple
+accept="application/pdf"
+onChange={(e)=>handlePdfUpload(index,e)}
+className="border p-2 rounded-lg"
+/>
+ <ul>
+      {(pdff[index] || []).map((file, i) => (
+        <li key={i}>{file.name}</li>
+      ))}
+    </ul>
+</div>
 
-    </div>
-    <Modal IsOpen={isModalOpen} >
-       <div className='w-full p-2 flex justify-end'>
-                    <button className=' text-gray-600 hover:text-gray-800 font-bold text-2xl cursor-pointer' onClick={() => setIsModalOpen(false)}>X</button>
-                </div>
-        <div className='flex flex-col gap-8 w-96 mx-auto'>
-           <h2 className='text-2xl text-center text-black font-bold'>Enter A Flip Book Name </h2>
-          <input type="text" placeholder='Enter Name' className='border-blue-500  border outline-none p-2 rounded-md w-full' value={name} onChange={(e)=>setName(e.target.value)}/>
-          <div className='
-          flex justify-center'>
-            <button className=' py-2 px-6  rounded-lg bg-blue-500 text-white font-bold text-md cursor-pointer hover:bg-blue-400 hover:-translate-y-1 transform' onClick={mergeAndShowFlipbook}>Submit</button>
-          </div>
-        </div>
-    </Modal>
-    </Layout>)}
-    </>
-  );
+)}
+
+</div>
+))}
+
+<button
+onClick={addPage}
+className="bg-blue-600 text-white px-4 py-2 rounded mt-3"
+>
++ Add Page
+</button>
+
+<button
+onClick={()=>setIsModalOpen(true)}
+className="bg-green-600 text-white px-4 py-2 rounded mt-3 ml-2"
+>
+Create Flipbook
+</button>
+
+</div>
+
+
+
+{/* RIGHT PANEL PREVIEW */}
+
+<div className=" p-6 overflow-y-auto  ml-[30%]">
+
+{pages.map(pg=>(
+
+<div
+key={pg.pageno}
+className="w-[210mm] min-h-[297mm] bg-white shadow mx-auto mb-6 p-6 overflow-hidden"
+>
+
+<div
+dangerouslySetInnerHTML={{__html:pg.content}}
+style={{fontSize:"24px"}}
+/>
+
+</div>
+
+))}
+
+</div>
+
+</div>
+
+
+
+{/* MODAL */}
+
+<Modal IsOpen={isModalOpen}>
+
+<div className="p-4 flex justify-end">
+<button onClick={()=>setIsModalOpen(false)}>X</button>
+</div>
+
+<div className="flex flex-col gap-4 w-80 mx-auto">
+
+<h2 className="text-xl font-bold text-center">
+Enter Flipbook Name
+</h2>
+
+<input
+type="text"
+value={name}
+onChange={e=>setName(e.target.value)}
+className="border p-2"
+/>
+
+<button
+onClick={mergeAndShowFlipbook}
+className="bg-blue-600 text-white p-2 rounded"
+>
+Submit
+</button>
+
+</div>
+
+</Modal>
+
+</Layout>
+
+)}
+
+</>
+
+);
+
 };
 
 export default Homepage;
-   
+
