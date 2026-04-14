@@ -26,10 +26,7 @@ export const Sidebar = ({ user = "Administrator" }) => {
         {/* Profile Section */}
         <div className="flex flex-col items-center mt-6 px-4">
           <img
-            src={
-              selectedImage ||
-              "https://via.placeholder.com/100x100.png?text=Profile"
-            }
+            src='/logo.png'
             alt="Profile"
             className="w-20 h-20 rounded-full border-2 border-blue-400 shadow-md object-cover"
           />
