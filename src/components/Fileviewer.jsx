@@ -125,8 +125,8 @@ const removeBlankPages = async (pdfBlob) => {
 
         {/* Flipbook */}
         <HTMLFlipBook
-          width={460}
-          height={550}
+          width={400}
+          height={600}
           showCover
           mobileScrollSupport
           ref={flipBook}
