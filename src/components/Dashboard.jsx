@@ -77,13 +77,13 @@ const handledeleteFlipbook = async (fileId) => {
               <div className='flex gap-4'>
                 <button
                 onClick={() => handleOpenFlipbook(file._id,file.originalName)}
-                className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+                className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition cursor-pointer"
               >
                 📖 Open Flipbook
               </button>
               <button
                 onClick={() => handledeleteFlipbook(file._id)}
-                className="mt-4 w-full bg-red-500 text-white py-2 rounded  transition"
+                className="mt-4 w-full bg-red-500 text-white py-2 rounded  transition cursor-pointer"
               >
                 Delete
               </button>

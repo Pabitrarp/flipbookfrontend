@@ -436,7 +436,7 @@ Page {pg.pageno}
 />
 <button
 onClick={()=>savePageContent(index)}
-className="bg-green-600 text-white px-3 py-1 mt-2 rounded"
+className="bg-green-600 text-white px-3 py-1 mt-2 rounded cursor-pointer"
 >
 Save Changes
 </button>
@@ -478,14 +478,14 @@ className="border p-2 rounded-lg"
 
 <button
 onClick={addPage}
-className="bg-blue-600 text-white px-4 py-2 rounded mt-3"
+className="bg-blue-600 text-white px-4 py-2 rounded mt-3 cursor-pointer"
 >
 + Add Page
 </button>
 
 <button
 onClick={()=>setIsModalOpen(true)}
-className="bg-green-600 text-white px-4 py-2 rounded mt-3 ml-2"
+className="bg-green-600 text-white px-4 py-2 rounded mt-3 ml-2 cursor-pointer"
 >
 Create Flipbook
 </button>
@@ -525,7 +525,7 @@ style={{fontSize:"24px"}}
 <Modal IsOpen={isModalOpen}>
 
 <div className="p-4 flex justify-end">
-<button onClick={()=>setIsModalOpen(false)}>X</button>
+<button className="cursor-pointer" onClick={()=>setIsModalOpen(false)}>X</button>
 </div>
 
 <div className="flex flex-col gap-4 w-80 mx-auto">
@@ -543,7 +543,7 @@ className="border p-2"
 
 <button
 onClick={mergeAndShowFlipbook}
-className="bg-blue-600 text-white p-2 rounded"
+className="bg-blue-600 text-white p-2 rounded cursor-pointer"
 >
 Submit
 </button>
