@@ -10,7 +10,7 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('http://flipbook.mitchell-railgear.com/api/multer/file', {
+        const res = await fetch('https://flipbook.mitchell-railgear.com/api/multer/file', {
           method: 'GET',
         });
         const result = await res.json();

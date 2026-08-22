@@ -1,6 +1,4 @@
 
-
-
 import React, { useEffect, useState, useRef, useContext } from "react";
 import { PDFDocument } from "pdf-lib";
 import { useParams } from "react-router-dom";
@@ -44,8 +42,11 @@ useEffect(() => {
     const loadPDF = async () => {
       try {
         const res = await fetch(
-          `http://flipbook.mitchell-railgear.com/api/multer/file/${id}`
+          `https://flipbook.mitchell-railgear.com/api/multer/file/${id}`
         );
+        //  const res = await fetch(
+        //   `http://localhost:8080/api/multer/file/${id}`
+        // );
 
         const contentDisposition = res.headers.get("content-disposition");
         if (contentDisposition) {
@@ -94,23 +95,26 @@ useEffect(() => {
   // 🔥 Render single page
   const renderPage = async (pdf, pageNumber) => {
     const page = await pdf.getPage(pageNumber);
-    const vp = page.getViewport({ scale: 1.2 });
+    const vp = page.getViewport({ scale: 2.5 });
 
     const canvas = document.createElement("canvas");
     canvas.width = vp.width;
     canvas.height = vp.height;
 
-    await page.render({
-      canvasContext: canvas.getContext("2d"),
-      viewport: vp, 
-    }).promise;    
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
 
-    // ⚡ Use blob URL (better than base64)
+    await page.render({
+      canvasContext: ctx,
+      viewport: vp,
+    }).promise;
+
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         resolve(url);
-      });
+      }, "image/png");
     });
   };
 
@@ -179,11 +183,12 @@ useEffect(() => {
             className="flipbook-shadow"
           >
             {pdfPages.map((src, idx) => (
-              <div key={idx} className="bg-white">
+              <div key={idx} className="bg-white w-full h-full flex items-center justify-center overflow-hidden">
                 <img
                   src={src}
                   alt={`Page ${idx + 1}`}
-                  className="w-full h-full object-fill"
+                  className="w-full h-full object-contain"
+                  style={{ imageRendering: "high-quality" }}
                 />
               </div>
             ))}

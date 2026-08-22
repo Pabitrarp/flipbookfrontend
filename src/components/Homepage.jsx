@@ -30,13 +30,18 @@ const [isModalOpen,setIsModalOpen] = useState(false);
 const [pageImages, setPageImages] = useState({});
 const [pdff,setpdff]=useState({});
 const config = {
-readonly:false,
-placeholder:"Write content here...",
-height:350,
- enableDragAndDropFileToEditor: true,
+  readonly: false,
+  placeholder: "Write content here...",
+  height: 350,
+  enableDragAndDropFileToEditor: true,
   askBeforePasteHTML: false,
   askBeforePasteFromWord: false,
-  defaultActionOnPaste: "insert_as_html",
+  defaultActionOnPaste: "insert_only_text",
+  defaultFontSize: "24",
+  style: {
+    fontSize: "24px",
+    lineHeight: "1.6",
+  },
 };
 
 
@@ -287,7 +292,7 @@ const pageToPdfBlob = async (html) => {
 
   const opt = {
     margin: 0,
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 4, useCORS: true, logging: false, letterRendering: true },
     jsPDF: {
       unit: "mm",
       format: "a4",
@@ -367,7 +372,7 @@ formData.append("file",finalBlob,name);
 try{
 
 const response=await fetch(
-"http://flipbook.mitchell-railgear.com/api/multer/upload",
+"https://flipbook.mitchell-railgear.com/api/multer/upload",
 {
 method:"POST",
 body:formData
@@ -406,7 +411,7 @@ return(
 {/* LEFT PANEL */}
 
 <div className="fixed h-screen overflow-y-auto p-4 bg-white shadow w-[26%]">
-
+<div className="h-[88vh] overflow-auto">
 {pages.map((pg,index)=>(
 
 <div key={pg.pageno} className="border mb-4 rounded">
@@ -492,7 +497,7 @@ Create Flipbook
 
 </div>
 
-
+</div>
 
 {/* RIGHT PANEL PREVIEW */}
 
